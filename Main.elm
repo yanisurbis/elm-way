@@ -1,11 +1,13 @@
 module Main exposing (..)
 
 import Html  
-import String exposing (length, toUpper)   
+import String exposing (length, toUpper, left)   
 
 -- main should be html, svg or program
 main = 
-    Html.text (exercise2 "James Moore")
+    wordsCount "hello my darling"
+    |> toString
+    |> Html.text
 
 add a b =
     a + b
@@ -23,8 +25,8 @@ rezult3 =
     add 1 2
     |> \a -> a % 2 == 0
 
-exercise2 : String -> String
-exercise2 string = 
+exercise1_2 : String -> String
+exercise1_2 string = 
     if length string > 10 then
         toUpper string 
         ++ " - name length: " 
@@ -33,3 +35,15 @@ exercise2 string =
         string 
         ++ " - name length: " 
         ++ toString (length string)
+    
+exercise2_1 =
+    (~=)
+
+(~=) a b =
+    left 1 a == left 1 b
+
+exercise2_2 sentence =
+    wordsCount sentence
+
+wordsCount =
+    String.words >> List.length
