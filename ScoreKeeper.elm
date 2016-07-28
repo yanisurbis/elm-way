@@ -11,22 +11,39 @@ import List
 
 -- first part MODEL
 
+type alias Name =
+    String
+
+type alias Points = 
+    Int
+
+type alias Index =
+    Int
+
+type alias Players =
+    Array.Array Player
+
+type alias Plays = 
+    Array.Array Play
+
 type alias Player = 
-    { name : String
-    , points : Int 
+    { name : Name
+    , points : Points
     }
 
 type alias Play = 
-    { name : String
-    , points : Int
-    , playerIndex : Int
+    { name : Name
+    , points : Points
+    -- index of player (in the array of players) who got points
+    , playerIndex : Index
     }
 
 type alias Model =
-    { players : Array Player
-    , input : String
-    , plays : Array Play
-    , indexPlayerToChange : Int
+    { players : Players
+    , input : Name
+    , plays : Plays
+    -- if we want to change player name we use this variable
+    , indexPlayerToChange : Index
     }
 
 initModel : Model
@@ -37,7 +54,7 @@ initModel =
     , indexPlayerToChange = -1
     }
 
-updatePlayerScore : Array Player -> Int -> Int -> Array Player
+updatePlayerScore : Players -> Index -> Points -> Players
 updatePlayerScore players index points =
     case get index players of 
         Just player ->
@@ -51,22 +68,16 @@ updatePlayerScore players index points =
 
 -- second part UPDATE
 
-type alias Index
-    = Int
-
-type alias Point
-    = Int
-
 type Msg
     = SavePlayer
-    | UpdatePlayer String Index
+    | UpdatePlayer Name Index
     | Cancel
-    | Add3Points Int
-    | Add2Points Int
-    | Input String
-    | DeletePlay Index Point Int
+    | Add3Points Index
+    | Add2Points Index
+    | Input Name
+    | DeletePlay Index Points Index
 
-updatePlays : Array Player -> Array Play -> Int -> Int -> Array Play
+updatePlays : Players -> Plays -> Index -> Points -> Plays
 updatePlays players plays index points = 
     -- get name
     -- make str
@@ -84,7 +95,7 @@ updatePlays players plays index points =
             (Play name points index)
             plays 
     
-updatePlayerName : String -> Int -> Array Player -> Array Player
+updatePlayerName : Name -> Index -> Players -> Players
 updatePlayerName newName index players =
     case get index players of 
         Just player ->
@@ -187,7 +198,7 @@ update msg model =
                 | input = name
             }
 
-renderPlay : Play -> Int -> Html Msg
+renderPlay : Play -> Index -> Html Msg
 renderPlay play index =
     div []
         [ text 
@@ -199,7 +210,7 @@ renderPlay play index =
             [ text "Delete Play"]
         ]
 
-renderPlays : Array Play -> Html Msg
+renderPlays : Plays -> Html Msg
 renderPlays plays = 
     div []
         ( plays
@@ -208,7 +219,7 @@ renderPlays plays =
         )
 
 
-renderPlayer : Player -> Int -> Html Msg
+renderPlayer : Player -> Index -> Html Msg
 renderPlayer player index = 
     div []
         [ h2
@@ -231,7 +242,7 @@ renderPlayer player index =
             [ text "Change Name" ]
         ]
 
-renderPlayers : Array Player -> Html Msg
+renderPlayers : Players -> Html Msg
 renderPlayers players = 
     div []
         ( players
