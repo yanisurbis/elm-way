@@ -9,7 +9,7 @@ import String exposing (length, toInt)
 import Array exposing (Array, fromList, push, get, set, indexedMap, map, slice, append, foldl)
 import List 
 
--- first part MODEL
+-- ALIASES
 
 type alias Name =
     String
@@ -32,15 +32,21 @@ type alias Player =
     }
 
 type alias Play = 
-    { name : Name
-    , points : Points
+    { playerName : Name
+    -- in this play
+    , playerPoints : Points
     -- index of player (in the array of players) who got points
     , playerIndex : Index
     }
 
+-- MODEL
+
 type alias Model =
+    -- list of players
     { players : Players
+    -- input to add player and edit their names
     , input : Name
+    -- list of plays
     , plays : Plays
     -- if we want to change player name we use this variable
     , indexPlayerToChange : Index
@@ -54,6 +60,16 @@ initModel =
     , indexPlayerToChange = -1
     }
 
+-- UPDATE
+
+type Msg
+    = SavePlayer
+    | UpdatePlayer Name Index
+    | Cancel
+    | AddPoints Index Points
+    | Input Name
+    | DeletePlay Index Points Index
+
 updatePlayerScore : Players -> Index -> Points -> Players
 updatePlayerScore players index points =
     case get index players of 
@@ -65,17 +81,6 @@ updatePlayerScore players index points =
 
         Nothing ->
             players
-
--- second part UPDATE
-
-type Msg
-    = SavePlayer
-    | UpdatePlayer Name Index
-    | Cancel
-    | Add3Points Index
-    | Add2Points Index
-    | Input Name
-    | DeletePlay Index Points Index
 
 updatePlays : Players -> Plays -> Index -> Points -> Plays
 updatePlays players plays index points = 
@@ -163,34 +168,19 @@ update msg model =
             }
 
         
-        Add2Points index ->
+        AddPoints index points ->
             { model
                 | players =
                     updatePlayerScore 
                         model.players 
                         index 
-                        2
+                        points
                 , plays =
                     updatePlays
                         model.players
                         model.plays
                         index
-                        2
-            }
-        
-        Add3Points index -> 
-            { model
-                | players =
-                    updatePlayerScore 
-                        model.players 
-                        index 
-                        3
-                , plays =
-                    updatePlays
-                        model.players
-                        model.plays
-                        index
-                        3
+                        points
             }
 
         Input name ->
@@ -202,10 +192,11 @@ renderPlay : Play -> Index -> Html Msg
 renderPlay play index =
     div []
         [ text 
-            ("Name : " ++ play.name ++ " , Points : " ++ toString play.points ++ " index: " ++ toString play.playerIndex)
+            ("Name : " ++ play.playerName ++ " , Points : " ++ toString play.playerPoints ++ " index: " ++ toString play.playerIndex)
         , button 
             [ type' "button"
-            , onClick (DeletePlay play.playerIndex play.points index)    
+            -- we need index to know what element of plays to delete
+            , onClick (DeletePlay play.playerIndex play.playerPoints index)    
             ]
             [ text "Delete Play"]
         ]
@@ -227,12 +218,12 @@ renderPlayer player index =
             [ text ("Name : " ++ player.name ++ " , Points : " ++ toString player.points) ]
         , button
             [ type' "button"
-            , onClick (Add3Points index)
+            , onClick (AddPoints index 3)
             ]
             [ text "Add 3" ]
         , button
             [ type' "button"
-            , onClick (Add2Points index)
+            , onClick (AddPoints index 2)
             ]
             [ text "Add 2" ]
         , button
