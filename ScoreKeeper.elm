@@ -6,7 +6,7 @@ import Html.Events exposing (..)
 import Html.App as Html
 import String
 import String exposing (length, toInt)
-import Array exposing (Array, fromList, push, get, set, indexedMap, map)
+import Array exposing (Array, fromList, push, get, set, indexedMap, map, slice, append, foldl)
 import List 
 
 -- first part MODEL
@@ -26,6 +26,7 @@ type alias Model =
     { players : Array Player
     , input : String
     , plays : Array Play
+    , indexPlayerToChange : Int
     }
 
 initModel : Model
@@ -33,6 +34,7 @@ initModel =
     { players = fromList []
     , input = ""
     , plays = fromList []
+    , indexPlayerToChange = -1
     }
 
 updatePlayerScore : Array Player -> Int -> Int -> Array Player
@@ -56,11 +58,13 @@ type alias Point
     = Int
 
 type Msg
-    = AddPlayer
+    = SavePlayer
+    | UpdatePlayer String Index
+    | Cancel
     | Add3Points Int
     | Add2Points Int
     | Input String
-    | DeletePlay Index Point
+    | DeletePlay Index Point Int
 
 updatePlays : Array Player -> Array Play -> Int -> Int -> Array Play
 updatePlays players plays index points = 
@@ -80,6 +84,17 @@ updatePlays players plays index points =
             (Play name points index)
             plays 
     
+updatePlayerName : String -> Int -> Array Player -> Array Player
+updatePlayerName newName index players =
+    case get index players of 
+        Just player ->
+            set
+                index
+                { player | name = newName }
+                players
+
+        Nothing ->
+            players
 
 
 
@@ -87,24 +102,53 @@ update : Msg -> Model -> Model
 update msg model = 
     case msg of
 
-        DeletePlay index points ->
+        UpdatePlayer name index ->
+            { model
+                | input = name
+                , indexPlayerToChange = index
+            }
+
+
+        DeletePlay index points indexForDeletion ->
             { model
                 | players =
                     updatePlayerScore 
                         model.players 
                         index 
                         -points
+                , plays =
+                    append
+                        (slice 0 (indexForDeletion) model.plays)
+                        (slice (indexForDeletion + 1) (Array.length model.plays) model.plays)
+
             }
 
-        AddPlayer ->
+        SavePlayer ->
+            if model.indexPlayerToChange == -1 then
+                { model
+                    | players = 
+                        push 
+                            { name = model.input
+                            , points = 0
+                            } 
+                            model.players
+                    , input = initModel.input
+                }
+            else
+                { model
+                    | indexPlayerToChange = -1
+                    , players = 
+                        updatePlayerName
+                            model.input
+                            model.indexPlayerToChange
+                            model.players
+                    , input = initModel.input
+                }
+
+        Cancel ->
             { model
-                | players = 
-                    push 
-                        { name = model.input
-                        , points = 0
-                        } 
-                        model.players
-                , input = initModel.input
+                | input = initModel.input
+                , indexPlayerToChange = -1
             }
 
         
@@ -143,14 +187,14 @@ update msg model =
                 | input = name
             }
 
-renderPlay : Play -> Html Msg
-renderPlay play =
+renderPlay : Play -> Int -> Html Msg
+renderPlay play index =
     div []
         [ text 
             ("Name : " ++ play.name ++ " , Points : " ++ toString play.points ++ " index: " ++ toString play.playerIndex)
         , button 
             [ type' "button"
-            , onClick (DeletePlay play.playerIndex play.points)    
+            , onClick (DeletePlay play.playerIndex play.points index)    
             ]
             [ text "Delete Play"]
         ]
@@ -159,7 +203,7 @@ renderPlays : Array Play -> Html Msg
 renderPlays plays = 
     div []
         ( plays
-            |> map (\ elm -> renderPlay elm)
+            |> indexedMap (\ index elm -> renderPlay elm index)
             |> Array.toList
         )
 
@@ -180,6 +224,11 @@ renderPlayer player index =
             , onClick (Add2Points index)
             ]
             [ text "Add 2" ]
+        , button
+            [ type' "button"
+            , onClick (UpdatePlayer player.name index)
+            ]
+            [ text "Change Name" ]
         ]
 
 renderPlayers : Array Player -> Html Msg
@@ -190,7 +239,7 @@ renderPlayers players =
             |> Array.toList
         )
             
-        
+
 
 view : Model -> Html Msg
 view model = 
@@ -199,6 +248,15 @@ view model =
             []
             [ text "List Of Players : " ]
         , renderPlayers model.players
+        , h3
+            []
+            [ text ("Total :" ++ toString (foldl 
+                                            (\ a b -> a.points + b) 
+                                            0
+                                            model.players
+                                        )
+                    )
+            ]
         , input 
             [ onInput Input
             , value model.input
@@ -206,9 +264,14 @@ view model =
             []
         , button
             [ type' "button"
-            , onClick AddPlayer
+            , onClick SavePlayer
             ]
-            [ text "Add Player" ]
+            [ text "Save" ]
+        , button
+            [ type' "button"
+            , onClick Cancel
+            ]
+            [ text "Cancel" ]
         , renderPlays model.plays
         ]
 
