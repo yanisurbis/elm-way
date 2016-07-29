@@ -192,7 +192,10 @@ renderPlay : Play -> Index -> Html Msg
 renderPlay play index =
     div []
         [ text 
-            ("Name : " ++ play.playerName ++ " , Points : " ++ toString play.playerPoints ++ " index: " ++ toString play.playerIndex)
+            ("Name : " ++ play.playerName 
+                ++ " , Points : " ++ toString play.playerPoints 
+                ++ " index: " ++ toString play.playerIndex
+            )
         , button 
             [ type' "button"
             -- we need index to know what element of plays to delete
@@ -241,8 +244,6 @@ renderPlayers players =
             |> Array.toList
         )
             
-
-
 view : Model -> Html Msg
 view model = 
     div []
